@@ -1,5 +1,6 @@
 package com.example.taskmaster;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -35,6 +36,14 @@ public class UserTests {
 	@Before
 	public void deleteAllBeforeTests() throws Exception {
 		userRepository.deleteAll();
+	}
+	
+	@Test
+	public void setsIdOnSave() {
+
+		User charles = userRepository.save(new User("Charles", "Dickens"));
+
+		assertThat(charles.getId()).isNotNull();
 	}
 
 	@Test
@@ -77,9 +86,9 @@ public class UserTests {
 
 	@Test
 	public void shouldQueryEntity() throws Exception {
-		MvcResult mvcResult = mockMvc
+		mockMvc
 				.perform(post("/users").content("{\"firstName\": \"Samuel\", \"lastName\": \"Beckett\"}"))
-				.andExpect(status().isCreated()).andExpect(status().isCreated()).andReturn();
+				.andExpect(status().isCreated());
 
 		mockMvc.perform(get("/users/search/findByFirstNameAndLastName?firstName={firstName}&lastName={lastName}",
 				"Samuel", "Beckett")).andExpect(status().isOk())

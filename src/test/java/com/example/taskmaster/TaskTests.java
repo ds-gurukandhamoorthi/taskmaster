@@ -1,5 +1,6 @@
 package com.example.taskmaster;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,6 +35,14 @@ public class TaskTests {
 	@Before
 	public void deleteAllBeforeTests() throws Exception {
 		taskRepository.deleteAll();
+	}
+
+	@Test
+	public void setsIdOnSave() {
+
+		Task waitFor = taskRepository.save(new Task("Wait For Godot"));
+
+		assertThat(waitFor.getId()).isNotNull();
 	}
 
 	@Test
