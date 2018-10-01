@@ -2,10 +2,15 @@ package com.example.taskmaster;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +22,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import com.example.taskmaster.data.TaskRepository;
+import com.example.taskmaster.data.UserRepository;
+import com.example.taskmaster.domain.Task;
+import com.example.taskmaster.domain.User;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -69,6 +80,36 @@ public class TaskmasterApplicationTests {
 		assertTrue(samuel.getTasks().size() == 1);
 	}
 	
+
+	@Test
+	public void shouldAssignATaskToAUserREST() throws Exception {
+		String userId = samuel.getId();
+		
+		MvcResult mvcResult = mockMvc.perform(post("/tasks").content("{\"description\": \"Wait For Godot\"}"))
+				.andExpect(status().isCreated()).andReturn();
+
+		String location = mvcResult.getResponse().getHeader("Location");
+
+		mockMvc.perform(
+				patch(location).content("{\"user\": {\"id\" : \"+userId+\"}}")).andExpect(
+						status().isNoContent());
+
+		mockMvc.perform(get(location)).andExpect(status().isOk()).andExpect(
+				jsonPath("$.description").value("Wait For Godot"));
+		System.out.println(samuel);
+		
+		assertTrue(samuel.getTasks().size() == 1);
+	}
+	
+	@Test
+	public void shouldQueryTask() throws Exception {
+
+		samuel.assign(waitFor);
+		mockMvc.perform(get("/tasks/search/findByUserId?userId={UserId}", samuel.getId()))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$._embedded.tasks[0].description").value("Wait For Godot"));
+	}
+	
 	@Test
 	public void shouldContainTheAssignedTask() throws Exception {
 		samuel.assign(waitFor);
@@ -77,11 +118,13 @@ public class TaskmasterApplicationTests {
 	
 
 	@Test
-	public void shouldAssignMultipleTasksToAnUser() throws Exception {
+	public void shouldAssignMultipleTasksToAUser() throws Exception {
 		samuel.assign(waitFor);
 		samuel.assign(returnHome);
 		assertTrue(samuel.getTasks().size() == 2);
 	}
+	
+
 	
 	@Test
 	public void shouldNotContainTheTaskOnceTheUserIsRelievedFromIt() throws Exception {
@@ -105,6 +148,7 @@ public class TaskmasterApplicationTests {
 		
 		assertTrue(charles.getTasks().contains(returnHome));
 	}
+	
 
 
 }
